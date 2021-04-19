@@ -1,6 +1,7 @@
-const Component = function(type = "BaseComponent") {
+const Component = function(paramObj) {
   this.parentObject = null;
-  this.type = type;
+  this.type = "BaseComponent";
+  GameEngine.loadParameterObj(this, paramObj);
 };
 
 Component.prototype.setParent = function(obj) {
@@ -13,11 +14,12 @@ Component.prototype.getType = function() {
 
 Component.prototype.update = function() { };
 
-const Animator = function (animations) {
-  Component.call(this, "Animator");
+const Animator = function (paramObj) {
+  Component.call(this, {type:"Animator"});
   this.state = 0;
   this.sprite = null;
-  this.animations = animations;
+  this.animations = [];
+  GameEngine.loadParameterObj(this, paramObj);
 };
 
 Animator.prototype = Object.create(Component.prototype);
@@ -35,9 +37,16 @@ Animator.prototype.update = function (engine, state, speed = 1) {
 };
 
 //Speed in FPS
-const Sprite = function (imgSrc, width = 10, height = 10, speed = 1, xOffset = 0, yOffset = 0) {
-  Component.call(this, "Sprite");
-  this.changeAnimation(imgSrc, width, height, speed, xOffset, yOffset);
+const Sprite = function (paramObj) {
+  Component.call(this, {type:"Sprite"});
+  this.imgSrc = [];
+  this.width = 10;
+  this.height = 10;
+  this.speed = 1;
+  this.xOffset = 0;
+  this.yOffset = 0;
+  GameEngine.loadParameterObj(this, paramObj);
+  this.changeAnimation(this.imgSrc, this.width, this.height, this.speed, this.xOffset, this.yOffset);
   this.paused = false;
 };
 
@@ -90,16 +99,19 @@ Sprite.prototype.setSpeed = function (speed = 1) {
   this.frameTime = 1000/speed; //Speed is FPS
 };
 
-const BoxCollider = function ( width, height, xOffset = 0, yOffset = 0, friction = [0,0,0,0], bounciness = [0,0,0,0], isTrigger = false ) {
-  Component.call(this, "Collider");
-  this.width = width;
-  this.height = height;
-  this.xOffset = xOffset - (width / 2);
-  this.yOffset = yOffset - (height / 2);
-  this.friction = friction;
-  this.bounciness = bounciness;
-  this.isTrigger = isTrigger;
+const BoxCollider = function (paramObj) {
+  Component.call(this, {type:"Collider"});
+  this.width = 10;
+  this.height = 10;
+  this.xOffset = 0;
+  this.yOffset = 0;
+  this.friction = [1,1,1,1];
+  this.bounciness = [0,0,0,0];
+  this.isTrigger = false;
   this.collisionFun = null;
+  GameEngine.loadParameterObj(this, paramObj);
+  this.xOffset = this.xOffset - (this.width / 2);
+  this.yOffset = this.yOffset - (this.height / 2);
 };
 
 BoxCollider.prototype = Object.create(Component.prototype);
@@ -147,16 +159,17 @@ BoxCollider.prototype.collided = function(collision, engine) {
   if (this.collisionFun) this.collisionFun(collision, engine);
 };
 
-const PhysicsBody = function (gravity = 0.00098, mass = 1) {
-  Component.call(this, "PhysicsBody");
-  this.gravity = gravity;
-  this.mass = mass;
+const PhysicsBody = function (paramObj) {
+  Component.call(this, {type:"PhysicsBody"});
+  this.gravity = 0.00098;
+  this.mass = 1;
   this.xVelocity = 0;
   this.yVelocity = 0;
   this.xFriction = 0;
   this.yFriction = 0;
   this.inAir = true;
   this.collidingSide = PhysicsBody.SIDE.NONE;
+  GameEngine.loadParameterObj(this, paramObj);
 };
 
 PhysicsBody.prototype = Object.create(Component.prototype);
@@ -260,9 +273,9 @@ PhysicsBody.prototype.getCollidingSide = function() {
   return this.collidingSide;
 };
 
-const GameObject = function ( x = 0, y = 0, ...components ) {
-  this.x = x;
-  this.y = y;
+const GameObject = function (paramObj) {
+  this.x = 0;
+  this.y = 0;
   this.enabled = true;
   this.sprite = null;
   this.collider = null;
@@ -270,8 +283,15 @@ const GameObject = function ( x = 0, y = 0, ...components ) {
   this.animator = null;
   this.components = [];
   this.type = "GameObject";
-  const self = this;
-  components.forEach(c => self.addComponent(c));
+  if (paramObj.hasOwnProperty("components")) 
+    paramObj.components.forEach(c => this.addComponent(c));
+  
+  delete paramObj.components;
+  delete paramObj.sprite;
+  delete paramObj.collider;
+  delete paramObj.physicsBody;
+  delete paramObj.animator;
+  GameEngine.loadParameterObj(this, paramObj);
 };
 
 GameObject.prototype.setEnabled = function(en) {
@@ -338,10 +358,9 @@ GameObject.prototype.getCollider = function() {
 
 GameObject.prototype.stop = function() { };
 
-const Player = function(...params) {
-  GameObject.call(this, ...params);
-  this.type = "Player";
-
+const Player = function(paramObj) {
+  GameObject.call(this, {type:"Player"});
+  GameEngine.loadParameterObj(this, paramObj);
   const self = this;
   this.input = {};
   this.events = [
@@ -457,12 +476,18 @@ const GameEngine = function (canvas, levelData) {
     this.levelTime = levelData.time;
     const self = this;
     levelData.objects.forEach(obj => {
-      self.addGameObject(GameEngine.PREFABS[obj.type](...obj.params));
+      self.addGameObject(GameEngine.PREFABS[obj.type](obj.params));
     });
   } else {
     this.levelTime = 10000;
   }
   this.gameStartTime = performance.now();
+};
+
+GameEngine.loadParameterObj = function(callingObj, paramObj) {
+  if (!paramObj || typeof paramObj !== "object" || Array.isArray(paramObj)) return;
+  for (const key in paramObj)
+    callingObj[key] = paramObj[key];
 };
 
 GameEngine.prototype.onEnd = function(fun) {
@@ -541,94 +566,10 @@ GameEngine.prototype.stop = function() {
 };
 
 GameEngine.PREFABS = Object.freeze({
-  Player: function(x, y, floorSlippery = false, wallsSlippery = false, floorsHot = false) {
-    const animations = [
-      {
-        frames: ["images/player/idle/1.png", "images/player/idle/2.png"],
-        width: 20,
-        height: 50,
-        speed: 2,
-      },
-      {
-        frames: ["images/player/jump-up.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/jump-right.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/jump-left.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/hang.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/hang-left.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/hang-right.png"],
-        width: 20,
-        height: 50,
-        speed: 1,
-      },
-      {
-        frames: ["images/player/walk-right/1.png", "images/player/walk-right/2.png", "images/player/walk-right/3.png", "images/player/walk-right/4.png"],
-        width: 20,
-        height: 50,
-        speed: 3,
-      },
-      {
-        frames: ["images/player/walk-left/1.png", "images/player/walk-left/2.png", "images/player/walk-left/3.png", "images/player/walk-left/4.png"],
-        width: 20,
-        height: 50,
-        speed: 3,
-      },
-    ];
-    return new Player(x, y, new BoxCollider(20,50,0,0,[0.001, (floorSlippery?0.00015:0.001), wallsSlippery?0.0005:0.00097, wallsSlippery?0.0005:0.00097], floorsHot?[1,1,0,0]:[0,0,0,0]), new PhysicsBody(), new Sprite(["images/player/idle/1.png", "images/player/idle/2.png"], 20, 50, 2), new Animator(animations));
+  Player: function(params) {
+    return new Player(params);
   },
-  Coin: function(x, y) {
-    const collider = new BoxCollider(15.5,15.5,0,0,0,0,true);
-    collider.onCollision((c, e) => {
-      if (c.colliderA.parentObject instanceof Player) {
-        e.addCoin();
-        c.colliderB.parentObject.setEnabled(false);
-      }
-    });
-    return new GameObject(x, y, collider, new Sprite(["images/coin/1.png", "images/coin/2.png", "images/coin/3.png" , "images/coin/4.png", "images/coin/5.png", "images/coin/6.png", "images/coin/7.png"], 15.5, 15.5, 7));
-  },
-  Flag: function(x, y) {
-    const collider = new BoxCollider(16,39,0,0,0,0,true);
-    collider.onCollision((c, e) => {
-      if (c.colliderA.parentObject instanceof Player) {
-        e.setWon();
-        e.stop();
-      }
-    });
-    return new GameObject(x, y, collider, new Sprite("images/flag.png", 16, 39));
-  },
-  Platform: function(x, y, width, height, image = null) {
-    const obj = new GameObject(x, y, new BoxCollider(width, height, 0,0,[0,0,0,0], [0,0,0,0]));
-    if (image !== null)
-      obj.addComponent(new Sprite(image, width, height));
-    return obj;
-  },
-  Background: function(image) {
-    const obj = new GameObject(300,200, new Sprite(image, 600, 400, 1));
-    obj.type = "Background";
-    return obj;
+  GameObject: function(params) {
+    return new GameObject(params);
   },
 });
