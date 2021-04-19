@@ -87,7 +87,7 @@ Sprite.prototype.update = function (engine) {
 };
 
 Sprite.prototype.setSpeed = function (speed = 1) {
-  this.frameTime = 1000/speed;
+  this.frameTime = 1000/speed; //Speed is FPS
 };
 
 const BoxCollider = function ( width, height, xOffset = 0, yOffset = 0, friction = [0,0,0,0], bounciness = [0,0,0,0], isTrigger = false ) {
