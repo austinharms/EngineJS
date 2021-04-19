@@ -283,14 +283,6 @@ const GameObject = function (paramObj) {
   this.animator = null;
   this.components = [];
   this.type = "GameObject";
-  if (paramObj.hasOwnProperty("components")) 
-    paramObj.components.forEach(c => this.addComponent(c));
-  
-  delete paramObj.components;
-  delete paramObj.sprite;
-  delete paramObj.collider;
-  delete paramObj.physicsBody;
-  delete paramObj.animator;
   GameEngine.loadParameterObj(this, paramObj);
 };
 
@@ -567,9 +559,29 @@ GameEngine.prototype.stop = function() {
 
 GameEngine.PREFABS = Object.freeze({
   Player: function(params) {
+    if (params.hasOwnProperty("components")) {
+      const components = params.components;
+      delete params.components;
+      const player = new Player(params);
+      components.forEach(c => player.addComponent( GameEngine.PREFABS[c.type](c.params)));
+      return player;
+    }
+    
     return new Player(params);
   },
   GameObject: function(params) {
     return new GameObject(params);
   },
+  BoxCollider: function(params) {
+    return new BoxCollider(params);
+  },
+  Animator: function(params) {
+    return new Animator(params);
+  },
+  Sprite: function(params) {
+    return new Sprite(params);
+  },
+  PhysicsBody: function(params) {
+    return new PhysicsBody(params);
+  }
 });
