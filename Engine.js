@@ -284,6 +284,7 @@ const GameObject = function (paramObj) {
   this.components = [];
   this.type = "GameObject";
   this.id = null;
+  this.updatePriority = 1;
   GameEngine.loadParameterObj(this, paramObj);
 };
 
@@ -361,6 +362,7 @@ GameObject.prototype.stop = function() { };
 
 const Player = function(paramObj) {
   GameObject.call(this, {type:"Player"});
+  this.updatePriority = 3;
   GameEngine.loadParameterObj(this, paramObj);
   const self = this;
   this.input = {};
@@ -457,6 +459,7 @@ Player.prototype.stop = function() {
 const Camera = function(paramObj) {
   GameObject.call(this, {type:"Camera"});
   this.targetObj = null;
+  this.updatePriority = 2;
   GameEngine.loadParameterObj(this, paramObj);
 };
 
@@ -473,8 +476,14 @@ Camera.prototype.update = function (engine) {
 
 Camera.prototype.setTarget = function(...params) {
   if (params.length === 1) {
-    if (params[0] instanceof GameObject)
+    if (params[0] instanceof GameObject) {
       this.targetObj = obj;
+    } else {
+      const obj = GameEngine.getGameObjectByID(params[0]);
+      if (obj !== undefined)
+        this.targetObj = obj;
+    }
+    
   } else if (params.length == 2) {
     this.x = params[0];
     this.y = params[1];
@@ -575,13 +584,16 @@ GameEngine.prototype.update = function () {
   this.gameObjects.forEach((gameObject) => { if(gameObject.getEnabled()) gameObject.update(engine)});
 };
 
-GameEngine.prototype.addGameObject = function (gameObject) {
-  if (gameObject && gameObject instanceof GameObject) {
-    if (gameObject.getType() === "Background")
-      this.background = gameObject;
-    else
+GameEngine.prototype.updatePrioritys = function() {
+  this.gameObjects.sort((a, b) => b.updatePriority - a.updatePriority);
+};
+
+GameEngine.prototype.addGameObject = function (...gameObjects) {
+    gameObjects.forEach(gameObject => {
+    if (gameObject && gameObject instanceof GameObject)
       this.gameObjects.push(gameObject);
-  }
+  });
+  this.updatePrioritys();
 };
 
 GameEngine.prototype.getAllColliders = function() {
