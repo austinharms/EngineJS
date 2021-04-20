@@ -445,7 +445,7 @@ Player.prototype.stop = function() {
   this.events.forEach(e => document.removeEventListener(e.type, e.fun));
 };
 
-const GameEngine = function (canvas, levelData) {
+const GameEngine = function (canvas, levelData, customPrefabs = null) {
   this.canvas = canvas;
   this.canvasCTX = canvas.getContext("2d");
   this.gameObjects = [];
@@ -468,7 +468,12 @@ const GameEngine = function (canvas, levelData) {
     this.levelTime = levelData.time;
     const self = this;
     levelData.objects.forEach(obj => {
-      self.addGameObject(GameEngine.PREFABS[obj.type](obj.params));
+      if (customPrefabs !== null) {
+        if (customPrefabs.hasOwnProperty(obj.type))
+          self.addGameObject(customPrefabs[obj.type](obj.params));
+        else
+          self.addGameObject(GameEngine.PREFABS[obj.type](obj.params));
+      }
     });
   } else {
     this.levelTime = 10000;
