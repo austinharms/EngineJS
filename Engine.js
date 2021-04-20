@@ -512,15 +512,12 @@ const GameEngine = function (canvas, levelData, customPrefabs = null) {
 
   if (levelData) {
     this.levelTime = levelData.time;
-    const self = this;
-    levelData.objects.forEach(obj => {
-      if (customPrefabs !== null) {
-        if (customPrefabs.hasOwnProperty(obj.type))
-          self.addGameObject(customPrefabs[obj.type](obj.params));
-        else
-          self.addGameObject(GameEngine.PREFABS[obj.type](obj.params));
-      }
-    });
+    this.addGameObject(...levelData.objects.map(obj => {
+        if (customPrefabs !== null && customPrefabs.hasOwnProperty(obj.type))
+          return customPrefabs[obj.type](obj.params);
+        return GameEngine.PREFABS[obj.type](obj.params);
+      })
+    );
   } else {
     this.levelTime = 10000;
   }
@@ -591,7 +588,7 @@ GameEngine.prototype.updatePrioritys = function() {
 GameEngine.prototype.addGameObject = function (...gameObjects) {
     gameObjects.forEach(gameObject => {
     if (gameObject && gameObject instanceof GameObject)
-      this.gameObjects.push(gameObject);
+      this.gameObjects.push(gameObject); 
   });
   this.updatePrioritys();
 };
