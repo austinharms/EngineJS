@@ -37,7 +37,7 @@ Animator.prototype.update = function (engine, state, speed = 1) {
 };
 
 //Speed in FPS
-const Sprite = function (paramObj) {
+const Sprite = function (paramObj, engine) {
   Component.call(this, {type:"Sprite"});
   this.imgSrc = [];
   this.width = 10;
@@ -47,6 +47,7 @@ const Sprite = function (paramObj) {
   this.yOffset = 0;
   this.renderMode = "no-repeat";
   GameEngine.loadParameterObj(this, paramObj);
+  console.log(this);
   this.changeAnimation(this.imgSrc, this.width, this.height, this.speed, this.renderMode, this.xOffset, this.yOffset);
   this.paused = false;
 };
@@ -90,6 +91,7 @@ Sprite.prototype.update = function (engine) {
     }
   }
 
+  engine.canvasCTX.beginPath();
   engine.canvasCTX.rect(
     this.parentObject.x + this.xOffset,
     this.parentObject.y + this.yOffset,
@@ -98,6 +100,7 @@ Sprite.prototype.update = function (engine) {
   );
   engine.canvasCTX.fillStyle = this.frames[this.frameIndex];
   engine.canvasCTX.fill();
+  engine.canvasCTX.stroke();
 };
 
 Sprite.prototype.setSpeed = function (speed = 1) {
