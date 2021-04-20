@@ -31,7 +31,7 @@ Animator.prototype.setSprite = function(sprite) {
 
 Animator.prototype.update = function (engine, state, speed = 1) {
   if (state !== this.state)
-    this.sprite.changeAnimation(this.animations[state].frames, this.animations[state].width, this.animations[state].height, this.animations[state].speed, this.animations[state].xOffset, this.animations[state].yOffset);
+    this.sprite.changeAnimation(this.animations[state].frames, this.animations[state].width, this.animations[state].height, this.animations[state].speed, this.animations[state].renderMode, this.animations[state].xOffset, this.animations[state].yOffset);
   this.state = state;
   this.sprite.setSpeed(this.animations[state].speed * speed);
 };
@@ -45,25 +45,29 @@ const Sprite = function (paramObj) {
   this.speed = 1;
   this.xOffset = 0;
   this.yOffset = 0;
+  this.renderMode = "no-repeat";
   GameEngine.loadParameterObj(this, paramObj);
-  this.changeAnimation(this.imgSrc, this.width, this.height, this.speed, this.xOffset, this.yOffset);
+  this.changeAnimation(this.imgSrc, this.width, this.height, this.speed, this.renderMode, this.xOffset, this.yOffset);
   this.paused = false;
 };
 
 Sprite.prototype = Object.create(Component.prototype);
 Sprite.prototype.constructor = Sprite;
 
-Sprite.prototype.changeAnimation = function(imgSrc, width = null, height = null, speed = null, xOffset = null, yOffset = null) {
+Sprite.prototype.changeAnimation = function(imgSrc, width = null, height = null, speed = null, renderMode = null, xOffset = null, yOffset = null) {
   if (Array.isArray(imgSrc))
     this.srcList = imgSrc;
   else
     this.srcList = [imgSrc];
 
   this.frames = [];
-  this.srcList.forEach(img => {
-    const elm = document.createElement("img");
-    elm.src = img;
-    this.frames.push(elm);
+  this.renderMode = renderMode === null?this.renderMode:renderMode;
+  this.srcList.forEach(imgSrc => {
+    const img = new Image();
+    img.src = imgSrc;
+    img.height = this.height;
+    img.width = this.width;
+    this.frames.push(CanvasRenderingContext2D.prototype.createPattern(img, this.renderMode));
   });
 
   this.frameTime = 1000/(speed === null?this.speed:speed);
@@ -86,13 +90,14 @@ Sprite.prototype.update = function (engine) {
     }
   }
 
-  engine.canvasCTX.drawImage(
-    this.frames[this.frameIndex],
+  engine.canvasCTX.rect(
     this.parentObject.x + this.xOffset,
     this.parentObject.y + this.yOffset,
     this.width,
     this.height
   );
+  engine.canvasCTX.fillStyle = this.frames[this.frameIndex];
+  engine.canvasCTX.fill();
 };
 
 Sprite.prototype.setSpeed = function (speed = 1) {
@@ -618,13 +623,21 @@ GameEngine.PREFABS = Object.freeze({
       const components = params.components;
       delete params.components;
       const player = new Player(params);
-      components.forEach(c => player.addComponent( GameEngine.PREFABS[c.type](c.params)));
+      components.forEach(c => player.addComponent(GameEngine.PREFABS[c.type](c.params)));
       return player;
     }
     
     return new Player(params);
   },
   GameObject: function(params) {
+    if (params.hasOwnProperty("components")) {
+      const components = params.components;
+      delete params.components;
+      const obj = new GameObject(params);
+      components.forEach(c => obj.addComponent(GameEngine.PREFABS[c.type](c.params)));
+      return obj;
+    }
+    
     return new GameObject(params);
   },
   BoxCollider: function(params) {
