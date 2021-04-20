@@ -445,6 +445,34 @@ Player.prototype.stop = function() {
   this.events.forEach(e => document.removeEventListener(e.type, e.fun));
 };
 
+const Camera = function(paramObj) {
+  GameObject.call(this, {type:"Camera"});
+  this.targetObj = null;
+  GameEngine.loadParameterObj(this, paramObj);
+};
+
+Camera.prototype = Object.create(GameObject.prototype);
+Camera.prototype.constructor = Camera;
+
+Camera.prototype.update = function (engine) {
+  if (this.targetObj !== null) {
+
+  }
+
+  GameObject.prototype.update.call(this, engine);
+};
+
+Camera.prototype.setTarget = function(...params) {
+  if (params.length === 1) {
+    if (params[0] instanceof GameObject)
+      this.targetObj = obj;
+  } else if (params.length == 2) {
+    this.x = params[0];
+    this.y = params[1];
+    this.targetObj = null;
+  }
+};
+
 const GameEngine = function (canvas, levelData, customPrefabs = null) {
   this.canvas = canvas;
   this.canvasCTX = canvas.getContext("2d");
