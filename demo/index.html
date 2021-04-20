@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EngineJS</title>
+</head>
+<body>
+  <h1>EngineJS Demo</h1>
+  <h3>A very basic example of what the engine can do</h3>
+  <canvas style="width:100%; height:100%;" id="game-window"></canvas>
+  <script src="../Engine.js"></script>
+  <script>
+    const engine = new GameEngine(document.getElementById("game-window"), 
+    {
+      "levelTime": 999999,
+      "objects": [
+        {
+          "type": "Player",
+          "params": {
+            "x": 300,
+            "y": 300,
+            "components": [
+              {
+                "type": "Sprite",
+                "params": {
+                  "imgSrc": "images/player.png",
+                  "width": 10,
+                  "heigh": 10
+                }
+              },
+              {
+                "type": "BoxCollider",
+                "params": {
+                  "width": 10,
+                  "heigh": 10
+                }
+              },
+              {
+                "type": "PhysicsBody"
+              }
+            ]
+          }
+        },
+        {
+          "type": "GameObject",
+          "params": {
+            "x": 300,
+            "y": 395,
+            "components": [
+              {
+                "type": "Sprite",
+                "params": {
+                  "imgSrc": "images/platform.png",
+                  "width": 600,
+                  "heigh": 10
+                }
+              },
+              {
+                "type": "BoxCollider",
+                "params": {
+                  "width": 600,
+                  "heigh": 10
+                }
+              }
+            ]
+          }
+        }
+      ]
+    });
+  </script>
+</body>
+</html>
