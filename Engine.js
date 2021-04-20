@@ -283,7 +283,16 @@ const GameObject = function (paramObj) {
   this.animator = null;
   this.components = [];
   this.type = "GameObject";
+  this.id = null;
   GameEngine.loadParameterObj(this, paramObj);
+};
+
+GameObject.prototype.getID = function() {
+  return this.id;
+};
+
+GameObject.prototype.setID = function(id) {
+  this.id = id;
 };
 
 GameObject.prototype.setEnabled = function(en) {
@@ -513,6 +522,10 @@ GameEngine.loadParameterObj = function(callingObj, paramObj) {
   if (!paramObj || typeof paramObj !== "object" || Array.isArray(paramObj)) return;
   for (const key in paramObj)
     callingObj[key] = paramObj[key];
+};
+
+GameEngine.prototype.getGameObjectByID = function(id) {
+  return this.gameObjects.find(obj => obj.id === id);
 };
 
 GameEngine.prototype.onEnd = function(fun) {
