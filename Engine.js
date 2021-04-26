@@ -31,7 +31,7 @@ Animator.prototype.setSprite = function(sprite) {
 
 Animator.prototype.update = function (engine, state, speed = 1) {
   if (state !== this.state)
-    this.sprite.changeAnimation(this.animations[state].frames, this.animations[state].width, this.animations[state].height, this.animations[state].speed, this.animations[state].renderMode, this.animations[state].xOffset, this.animations[state].yOffset);
+    this.sprite.changeAnimation(engine, this.animations[state].frames, this.animations[state].width, this.animations[state].height, this.animations[state].speed, this.animations[state].renderMode, this.animations[state].xOffset, this.animations[state].yOffset);
   this.state = state;
   this.sprite.setSpeed(this.animations[state].speed * speed);
 };
@@ -47,15 +47,14 @@ const Sprite = function (paramObj, engine) {
   this.yOffset = 0;
   this.renderMode = "no-repeat";
   GameEngine.loadParameterObj(this, paramObj);
-  console.log(this);
-  this.changeAnimation(this.imgSrc, this.width, this.height, this.speed, this.renderMode, this.xOffset, this.yOffset);
+  this.changeAnimation(engine, this.imgSrc, this.width, this.height, this.speed, this.renderMode, this.xOffset, this.yOffset);
   this.paused = false;
 };
 
 Sprite.prototype = Object.create(Component.prototype);
 Sprite.prototype.constructor = Sprite;
 
-Sprite.prototype.changeAnimation = function(imgSrc, width = null, height = null, speed = null, renderMode = null, xOffset = null, yOffset = null) {
+Sprite.prototype.changeAnimation = function(engine, imgSrc, width = null, height = null, speed = null, renderMode = null, xOffset = null, yOffset = null) {
   if (Array.isArray(imgSrc))
     this.srcList = imgSrc;
   else
@@ -68,7 +67,7 @@ Sprite.prototype.changeAnimation = function(imgSrc, width = null, height = null,
     img.src = imgSrc;
     img.height = this.height;
     img.width = this.width;
-    this.frames.push(CanvasRenderingContext2D.prototype.createPattern(img, this.renderMode));
+    this.frames.push(engine.canvasCTX.createPattern(img, this.renderMode));
   });
 
   this.frameTime = 1000/(speed === null?this.speed:speed);
@@ -522,8 +521,8 @@ const GameEngine = function (canvas, levelData, customPrefabs = null) {
     this.levelTime = levelData.time;
     this.addGameObject(...levelData.objects.map(obj => {
         if (customPrefabs !== null && customPrefabs.hasOwnProperty(obj.type))
-          return customPrefabs[obj.type](obj.params);
-        return GameEngine.PREFABS[obj.type](obj.params);
+          return customPrefabs[obj.type](obj.params, this);
+        return GameEngine.PREFABS[obj.type](obj.params, this);
       })
     );
   } else {
@@ -621,38 +620,38 @@ GameEngine.prototype.stop = function() {
 };
 
 GameEngine.PREFABS = Object.freeze({
-  Player: function(params) {
+  Player: function(params, engine) {
     if (params.hasOwnProperty("components")) {
       const components = params.components;
       delete params.components;
-      const player = new Player(params);
-      components.forEach(c => player.addComponent(GameEngine.PREFABS[c.type](c.params)));
+      const player = new Player(params, engine);
+      components.forEach(c => player.addComponent(GameEngine.PREFABS[c.type](c.params, engine)));
       return player;
     }
     
-    return new Player(params);
+    return new Player(params, engine);
   },
-  GameObject: function(params) {
+  GameObject: function(params, engine) {
     if (params.hasOwnProperty("components")) {
       const components = params.components;
       delete params.components;
-      const obj = new GameObject(params);
-      components.forEach(c => obj.addComponent(GameEngine.PREFABS[c.type](c.params)));
+      const obj = new GameObject(params, engine);
+      components.forEach(c => obj.addComponent(GameEngine.PREFABS[c.type](c.params, engine)));
       return obj;
     }
     
-    return new GameObject(params);
+    return new GameObject(params, engine);
   },
-  BoxCollider: function(params) {
-    return new BoxCollider(params);
+  BoxCollider: function(params, engine) {
+    return new BoxCollider(params, engine);
   },
-  Animator: function(params) {
-    return new Animator(params);
+  Animator: function(params, engine) {
+    return new Animator(params, engine);
   },
-  Sprite: function(params) {
-    return new Sprite(params);
+  Sprite: function(params, engine) {
+    return new Sprite(params, engine);
   },
-  PhysicsBody: function(params) {
-    return new PhysicsBody(params);
+  PhysicsBody: function(params, engine) {
+    return new PhysicsBody(params, engine);
   }
 });
