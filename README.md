@@ -1,4 +1,5 @@
 # EngineJS
+**this project is not completed**
 A very basic physics base game engine in JavaScript
 Features
  - Frame Rate Independent Animation
