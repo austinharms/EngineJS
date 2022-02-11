@@ -8,3 +8,4 @@ Features
  - Built in JSON level loader
  - Simple AABB Collisions with triggers
  - Physics Based Interactions with Side Dependent Properties Like Friction
+## Example usage available in the demo folder
